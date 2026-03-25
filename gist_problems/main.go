@@ -1,9 +1,24 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 )
+
+func res(n *int) (int, int) {
+	*n++
+	return *n, 1
+}
+
+func res2(n int) (int, int) {
+	n++
+	return n, 1
+}
+
+func check() error {
+	return errors.New("errror from func_check")
+}
 
 func main() {
 	// 1. Объявлять переменные через var и напрямую.
@@ -210,6 +225,108 @@ func main() {
 		wg.Wait()
 
 		fmt.Println(counter)
+	}
+
+	// 8. Передача аргументов в функции по указателю, по значению.
+	// Возврат нескольких аргументов из функции.
+
+	{
+		fmt.Println("\n8-th example")
+		n := 5
+		fmt.Println(res(&n))
+		fmt.Println(n)
+
+		fmt.Println(res2(n))
+		fmt.Println(n)
+	}
+
+	// 9. Создание ошибки, возврат ее из функции. Вложенные ошибки.
+	{
+		fmt.Println("\n9-th example")
+		err := fmt.Errorf("something went wrong: %s", "smth")
+		fmt.Println(err)
+		err = errors.New("problem!")
+		fmt.Println(err)
+		err = check()
+		fmt.Println(err)
+	}
+
+	// 10. Анонимные функции - создание, вызов с аргументами, захват значений.
+	{
+		fmt.Println("\n10-th example")
+		res := func(a, b int) int {
+			return a + b
+		}(5, 6)
+		fmt.Println(res)
+
+		res2 := func(a, b int) int {
+			return a + b
+		}
+		fmt.Println(res2(1, 3))
+
+		x := 10
+
+		f := func() int { // closure способность анонимной функции использовать
+			//внешие переменные
+			x += 5
+			return x
+		}
+		fmt.Println(f())
+		fmt.Println(x)
+	}
+
+	// 11. Использование defer для закрытия каналов, освобождения ресурсов.
+	{
+		fmt.Println("\n11-th example")
+		check := make(chan int, 5)
+		defer close(check)
+		check <- 1
+		fmt.Println(<-check)
+	}
+	// 12. Форматирование строки.
+	// Вывод инта, флоата, була, кастомной структуры в форматированной строке.
+	{
+		fmt.Println("\n12-th example")
+
+		type User struct {
+			Name string
+			Age  int
+		}
+		n := 42
+		f := 3.14159
+		b := true
+		s := "hello"
+		u := User{Name: "Ilya", Age: 25}
+
+		fmt.Printf("its int: %d\n", n)             // int
+		fmt.Printf("its float: %f\n", f)           // float
+		fmt.Printf("its 2 digts float: %.2f\n", f) // float с точностью
+		fmt.Printf("its bool: %t\n", b)            // bool
+		fmt.Printf("its string: %s\n", s)          // string
+		fmt.Printf("its val?: %v\n", u)            // значение
+		fmt.Printf("its struct: %+v\n", u)         // struct с полями
+		fmt.Printf("its go look: %#v\n", u)        // Go-вид
+	}
+
+	// 13. Переменная с функцией.
+	// Вызов такой переменной с аргументами.
+	{
+		fmt.Println("\n13-th example")
+		sum := func(a, b int) int {
+			return a + b
+		}
+		fmt.Println(sum(3, 1))
+
+	}
+
+	// 14. Передача указателя в функцию.
+	// Модификация значения в указателе внутри функции.
+
+	{
+		fmt.Println("\n14-th example")
+		n := 5
+		fmt.Println(res(&n))
+		fmt.Println(n)
 	}
 
 }

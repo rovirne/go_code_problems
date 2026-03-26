@@ -1,10 +1,25 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strconv"
 	"sync"
+	"time"
 )
+
+func (d Dog) Speak() {
+	fmt.Println("woof")
+}
+
+type Animal interface {
+	Speak()
+}
+
+type Dog struct{}
 
 func res(n *int) (int, int) {
 	*n++
@@ -327,6 +342,291 @@ func main() {
 		n := 5
 		fmt.Println(res(&n))
 		fmt.Println(n)
+	}
+
+	// 15. Маршал и анмаршал структуры в json.
+
+	{
+		fmt.Println("\n15-th example")
+
+		type User struct {
+			Name string `json:"name"`
+			Age  int    `json:"age"`
+		}
+
+		u := User{
+			Name: "Ilia",
+			Age:  23,
+		}
+
+		// Marshal
+		data, err := json.Marshal(u)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(data)) // {"name":"Ilia","age":23}
+
+		// Unmarshal
+		var u2 User
+		err = json.Unmarshal(data, &u2)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(u2.Name, u2.Age) // Ilia 23
+
+	}
+
+	//	16. Итерация по строке (через слайс и через ренж).
+	// Замена символа в середине строки
+	// (в том числе для строк с многобайтовыми символами).
+
+	{
+		fmt.Println("\n16-th example")
+		s := "héllo"
+
+		for z := range s {
+			fmt.Println(string(s[z])) // многобайтовые символы ломаются
+		}
+		fmt.Println("\n")
+
+		for i, r := range s {
+			fmt.Println(i, r) // i — байтовый индекс, r — rune
+		}
+		fmt.Println("\n")
+
+		b := []byte(s)
+
+		for i := 0; i < len(b); i++ {
+			fmt.Println(i, string(b[i])) // по байтам
+		} // многобайтовые символы ломаются
+
+		fmt.Println("\n")
+		runes := []rune(s)
+
+		for i := 0; i < len(runes); i++ {
+			fmt.Println(i, string(runes[i]))
+		}
+
+		s = "héllo"
+		// s[1] = 'a' // ошибка компиляции нельзя так
+
+		new := []rune(s) // []byte в случае стандартных символов, в других []rune
+
+		new[1] = 'a'
+
+		s = string(new)
+		fmt.Println(s) // hallo
+	}
+
+	// 17. Конвертация строку в слайс рун и обратно.
+
+	{
+		fmt.Println("\n17-th example")
+
+		s := "héllo"
+
+		r := []rune(s)
+
+		fmt.Println(r) // [104 233 108 108 111]
+
+		r = []rune{104, 233, 108, 108, 111}
+
+		s = string(r)
+
+		fmt.Println(s) // héllo
+	}
+
+	// 18. Доставание куска строки из середины по индексам
+	// (в том числе многобайтовых символов).
+
+	{
+		fmt.Println("\n18-th example")
+		s := "héllo"
+
+		// может сломать символ WRONG!
+		sub := s[1:4]
+
+		fmt.Println(sub)
+
+		r := []rune(s)
+
+		// берем с 1 по 4 символ
+		sub = string(r[1:4])
+
+		fmt.Println(sub) // éll
+
+	}
+
+	// 19. Сортировка слайса встроенной функцией.
+	{
+		fmt.Println("\n19-th example")
+		arr := []int{5, 2, 8, 1}
+
+		sort.Ints(arr)
+
+		fmt.Println(arr) // [1 2 5 8]
+
+		arr1 := []string{"banana", "apple", "cherry"}
+
+		sort.Strings(arr1)
+
+		fmt.Println(arr1) // [apple banana cherry]
+
+		arr3 := []int{5, 2, 8, 1}
+
+		sort.Slice(arr3, func(i, j int) bool {
+			return arr3[i] > arr3[j]
+		})
+
+		fmt.Println(arr3)
+
+	}
+
+	// 20. Остановка исполнения через time.Sleep()
+	{
+		fmt.Println("\n20-th example")
+
+		fmt.Println("start")
+
+		// time.Sleep(1 * time.Second)
+		time.Sleep(1 * time.Millisecond) // 0.5 сек
+		// time.Sleep(1 * time.Minute)
+
+		fmt.Println("end")
+	}
+
+	// 21. Использование контекста с таймаутом и отменой.
+	// Мочь писать код который таймаутится и заканчивает исполнение
+	// через н секунд (через контекст с таймаутом и select)
+	{
+		fmt.Println("\n21-th example")
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+
+		ch := make(chan string)
+
+		go func() {
+			time.Sleep(2 * time.Second)
+			ch <- "done"
+		}()
+
+		select {
+		case res := <-ch:
+			fmt.Println(res)
+		case <-ctx.Done():
+			fmt.Println("timeout:", ctx.Err())
+		}
+	}
+
+	// 22. Использование for (бесконечный цикл, проверка условия,
+	// проверка счетчика до значения вперед или назад)
+
+	{
+		fmt.Println("\n22-th example")
+		i := 0
+
+		// for {
+		// 	//do smth or do break
+		// }
+
+		for i < 5 {
+			fmt.Println(i)
+			i++
+		}
+
+		fmt.Println("\n")
+
+		for i := 0; i < 5; i++ {
+			fmt.Println(i)
+		}
+		fmt.Println("\n")
+
+		for i := 5; i > 0; i-- {
+			fmt.Println(i)
+		}
+	}
+
+	// 23. Каст обьектов друг к другу. Float -> Int и обратно.
+	// Каст обьектов одного интерфейса к конкретным типам.
+	// Разные виды кастов.
+	{
+		fmt.Println("\n23-th example")
+
+		var f float64 = 3.7
+		i := int(f)
+
+		fmt.Println(i) // 3 (дробная часть отбрасывается)
+
+		var in int = 3
+		fl := float64(in)
+
+		fmt.Println(fl) // 3.0
+
+		var x interface{} = "hello"
+
+		s := x.(string)
+
+		fmt.Println(s) // hello
+	}
+
+	{
+		var x interface{} = 123
+
+		s, ok := x.(string)
+
+		fmt.Println(s, ok) // "" false
+	}
+
+	{
+		var x interface{} = 10.42
+
+		switch v := x.(type) {
+		case int:
+			fmt.Println("int:", v)
+		case string:
+			fmt.Println("string:", v)
+		default:
+			fmt.Println("unknown")
+		}
+	}
+
+	{
+		fmt.Println("\n")
+		// type Animal interface {
+		// 	Speak()
+		// }
+
+		// type Dog struct{}
+
+		// func (d Dog) Speak() {
+		// 	fmt.Println("woof")
+		// }
+
+		var a Animal = Dog{}
+
+		d := a.(Dog)
+
+		d.Speak()
+	}
+
+	//24. Конвертация строки в int или float.
+	{
+		fmt.Println("\n24-th example")
+		s := "123"
+
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(i) // 123
+
+		f, err := strconv.ParseFloat("3.14", 32)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(f) // 3.14
 	}
 
 }
